@@ -12,7 +12,6 @@
     <modules>
         <module>core</module>
         <module>velocity</module>
-        <module>worldresourcepacks</module>
     </modules>
 
     <properties>
