@@ -221,7 +221,7 @@ public class ResourcePack {
         return url;
     }
 
-    void setUrl(String url) {
+    public void setUrl(String url) {
         this.url = url;
     }
 
@@ -233,7 +233,7 @@ public class ResourcePack {
         return BaseEncoding.base16().lowerCase().encode(hash);
     }
 
-    void setHash(String hash) {
+    public void setHash(String hash) {
         setRawHash(BaseEncoding.base16().lowerCase().decode(hash.toLowerCase(Locale.ROOT)));
     }
 

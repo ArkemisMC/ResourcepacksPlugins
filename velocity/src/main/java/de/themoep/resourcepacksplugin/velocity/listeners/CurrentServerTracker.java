@@ -62,6 +62,7 @@ public class CurrentServerTracker {
 
     /**
      * Get the server the player is currently on or connecting to
+     *
      * @param player The player
      * @return The name of the server
      */

@@ -34,11 +34,7 @@ import de.themoep.resourcepacksplugin.core.ResourcePack;
 import de.themoep.resourcepacksplugin.velocity.VelocityResourcepacks;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -193,7 +189,7 @@ public class ServerSwitchListener {
 
             if (sendDelay > 0) {
                 plugin.getProxy().getScheduler().buildTask(plugin, () -> calculatePack(playerId)).delay(sendDelay * 50, TimeUnit.MILLISECONDS).schedule();
-            } else if (!appliedInConfigPhase.contains(playerId)){
+            } else if (!appliedInConfigPhase.contains(playerId)) {
                 calculatePack(playerId);
             }
             appliedInConfigPhase.remove(playerId);

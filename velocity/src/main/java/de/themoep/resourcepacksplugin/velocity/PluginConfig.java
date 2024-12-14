@@ -17,16 +17,13 @@ package de.themoep.resourcepacksplugin.velocity;
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,6 +54,48 @@ public class PluginConfig {
                 .path(configFile.toPath())
                 .nodeStyle(NodeStyle.BLOCK)
                 .build();
+    }
+
+    private static Object[] splitPath(String key) {
+        return PATH_PATTERN.split(key);
+    }
+
+    public static Map<String, Object> getConfigMap(Object configuration) {
+        if (configuration instanceof Map) {
+            return getValues((Map<?, ?>) configuration);
+        } else if (configuration instanceof ConfigurationNode) {
+            return getValues((ConfigurationNode) configuration);
+        }
+        return null;
+    }
+
+    private static Map<String, Object> getValues(ConfigurationNode config) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (Map.Entry<Object, ? extends ConfigurationNode> entry : config.childrenMap().entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            ConfigurationNode value = entry.getValue();
+            if (value.isMap()) {
+                map.put(key, getValues(value));
+            } else {
+                map.put(key, value.raw());
+            }
+        }
+        return map;
+    }
+
+    private static Map<String, Object> getValues(Map<?, ?> map) {
+        Map<String, Object> returnMap = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            if (entry.getValue() instanceof Map) {
+                returnMap.put(key, getValues((Map<?, ?>) entry.getValue()));
+            } else if (entry.getValue() instanceof ConfigurationNode) {
+                returnMap.put(key, getValues((ConfigurationNode) entry.getValue()));
+            } else {
+                returnMap.put(key, entry.getValue());
+            }
+        }
+        return returnMap;
     }
 
     public boolean load() {
@@ -150,7 +189,7 @@ public class PluginConfig {
     public Map<String, Object> getSection(String key) {
         return getConfigMap(getRawConfig(key));
     }
-    
+
     public int getInt(String path) {
         return getInt(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getInt() : 0);
     }
@@ -158,7 +197,7 @@ public class PluginConfig {
     public int getInt(String path, int def) {
         return getRawConfig(path).getInt(def);
     }
-    
+
     public double getDouble(String path) {
         return getDouble(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getDouble() : 0);
     }
@@ -166,7 +205,7 @@ public class PluginConfig {
     public double getDouble(String path, double def) {
         return getRawConfig(path).getDouble(def);
     }
-    
+
     public String getString(String path) {
         return getString(path, defaultConfig != null ? defaultConfig.node(splitPath(path)).getString() : null);
     }
@@ -178,54 +217,12 @@ public class PluginConfig {
         }
         return node.getString();
     }
-    
+
     public boolean getBoolean(String path) {
         return getBoolean(path, defaultConfig != null && defaultConfig.node(splitPath(path)).getBoolean());
     }
 
     public boolean getBoolean(String path, boolean def) {
         return getRawConfig(path).getBoolean(def);
-    }
-
-    private static Object[] splitPath(String key) {
-        return PATH_PATTERN.split(key);
-    }
-
-    public static Map<String, Object> getConfigMap(Object configuration) {
-        if (configuration instanceof Map) {
-            return getValues((Map<?, ?>) configuration);
-        } else if (configuration instanceof ConfigurationNode) {
-            return getValues((ConfigurationNode) configuration);
-        }
-        return null;
-    }
-
-    private static Map<String, Object> getValues(ConfigurationNode config) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (Map.Entry<Object, ? extends ConfigurationNode> entry : config.childrenMap().entrySet()) {
-            String key = String.valueOf(entry.getKey());
-            ConfigurationNode value = entry.getValue();
-            if (value.isMap()) {
-                map.put(key, getValues(value));
-            } else {
-                map.put(key, value.raw());
-            }
-        }
-        return map;
-    }
-
-    private static Map<String, Object> getValues(Map<?, ?> map) {
-        Map<String, Object> returnMap = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            String key = String.valueOf(entry.getKey());
-            if (entry.getValue() instanceof Map) {
-                returnMap.put(key, getValues((Map<?, ?>) entry.getValue()));
-            } else if (entry.getValue() instanceof ConfigurationNode) {
-                returnMap.put(key, getValues((ConfigurationNode) entry.getValue()));
-            } else {
-                returnMap.put(key, entry.getValue());
-            }
-        }
-        return returnMap;
     }
 }

@@ -21,6 +21,7 @@ package de.themoep.resourcepacksplugin.velocity;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
+import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.network.ProtocolState;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.plugin.PluginContainer;
@@ -33,28 +34,20 @@ import com.velocitypowered.api.proxy.player.ResourcePackInfo;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.util.ProxyVersion;
 import de.themoep.minedown.adventure.MineDown;
-import de.themoep.resourcepacksplugin.core.ClientType;
-import de.themoep.resourcepacksplugin.core.MinecraftVersion;
-import de.themoep.resourcepacksplugin.core.PluginLogger;
-import de.themoep.resourcepacksplugin.core.SubChannelHandler;
-import de.themoep.resourcepacksplugin.velocity.events.ResourcePackSelectEvent;
-import de.themoep.resourcepacksplugin.velocity.events.ResourcePackSendEvent;
-import de.themoep.resourcepacksplugin.velocity.integrations.FloodgateIntegration;
-import de.themoep.resourcepacksplugin.velocity.integrations.GeyserIntegration;
-import de.themoep.resourcepacksplugin.velocity.integrations.ViaVersionIntegration;
-import de.themoep.resourcepacksplugin.velocity.listeners.*;
-import de.themoep.resourcepacksplugin.core.PackAssignment;
-import de.themoep.resourcepacksplugin.core.PackManager;
-import de.themoep.resourcepacksplugin.core.ResourcePack;
-import de.themoep.resourcepacksplugin.core.ResourcepacksPlayer;
-import de.themoep.resourcepacksplugin.core.ResourcepacksPlugin;
-import de.themoep.resourcepacksplugin.core.UserManager;
+import de.themoep.resourcepacksplugin.core.*;
 import de.themoep.resourcepacksplugin.core.commands.PluginCommandExecutor;
 import de.themoep.resourcepacksplugin.core.commands.ResetPackCommandExecutor;
 import de.themoep.resourcepacksplugin.core.commands.ResourcepacksPluginCommandExecutor;
 import de.themoep.resourcepacksplugin.core.commands.UsePackCommandExecutor;
 import de.themoep.resourcepacksplugin.core.events.IResourcePackSelectEvent;
 import de.themoep.resourcepacksplugin.core.events.IResourcePackSendEvent;
+import de.themoep.resourcepacksplugin.velocity.events.ResourcePackSelectEvent;
+import de.themoep.resourcepacksplugin.velocity.events.ResourcePackSendEvent;
+import de.themoep.resourcepacksplugin.velocity.integrations.FloodgateIntegration;
+import de.themoep.resourcepacksplugin.velocity.integrations.GeyserIntegration;
+import de.themoep.resourcepacksplugin.velocity.integrations.ViaVersionIntegration;
+import de.themoep.resourcepacksplugin.velocity.jedis.JedisManager;
+import de.themoep.resourcepacksplugin.velocity.listeners.*;
 import de.themoep.utils.lang.LangLogger;
 import de.themoep.utils.lang.LanguageConfig;
 import de.themoep.utils.lang.velocity.LanguageManager;
@@ -67,55 +60,38 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
 public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
+    public static VelocityResourcepacks INSTANCE;
     private final ProxyServer proxy;
     private final VelocityPluginLogger logger;
     private final File dataFolder;
-    private PluginContainer ownContainer = null;
-
-    private PluginConfig config;
-
-    private PluginConfig storedPacks;
-    
-    private PackManager pm = new PackManager(this);
-
-    private UserManager um;
-
-    private LanguageManager lm;
-    
-    private Level loglevel = Level.INFO;
-
     protected ResourcepacksPluginCommandExecutor pluginCommand;
-
+    private PluginContainer ownContainer = null;
+    private PluginConfig config;
+    private PluginConfig storedPacks;
+    private PackManager pm = new PackManager(this);
+    private UserManager um;
+    private LanguageManager lm;
+    private Level loglevel = Level.INFO;
     /**
-     * Set of uuids of players which got send a pack by the backend server. 
+     * Set of uuids of players which got send a pack by the backend server.
      * This is needed so that the server does not send the bungee pack if the user has a backend one.
      */
     private Map<UUID, Boolean> backendPackedPlayers = new ConcurrentHashMap<>();
-
     /**
      * Set of uuids of players which were authenticated by a backend server's plugin
      */
     private Set<UUID> authenticatedPlayers = new HashSet<>();
-
     /**
      * Wether the plugin is enabled or not
      */
     private boolean enabled = false;
-
     private ViaVersionIntegration viaApi;
     private GeyserIntegration geyser;
     private FloodgateIntegration floodgate;
@@ -124,24 +100,20 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     @Inject
     public VelocityResourcepacks(ProxyServer proxy, Logger logger, @DataDirectory Path dataFolder) {
+        INSTANCE = this;
+
         this.proxy = proxy;
         this.logger = new VelocityPluginLogger(logger);
         this.dataFolder = dataFolder.toFile();
     }
 
     @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
-        try {
-            Class.forName("org.spongepowered.configurate.ConfigurationNode");
-        } catch (ClassNotFoundException e) {
-            ProxyVersion version = getProxy().getVersion();
-            log(Level.SEVERE, "\nYou are running an outdated version of Velocity! Update to at least Velocity 3.3.0!\n");
-            log(Level.SEVERE, getName() + " " + getVersion() + " is not compatible with " + version.getName() + " " + version.getVersion() + "!\n");
-            log(Level.SEVERE, "Disabling plugin!");
-            return;
-        }
-        boolean firstStart = !getDataFolder().exists();
+    public void onProxyDisable(ProxyShutdownEvent e) {
+        JedisManager.INSTANCE.onDisable();
+    }
 
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
         messageChannelHandler = new PluginMessageListener(this);
 
         if (!loadConfig()) {
@@ -182,56 +154,6 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
                     }
                 });
 
-        getProxy().getPluginManager().getPlugin("authmevelocity")
-                .ifPresent(c -> {
-                    log(Level.INFO, "Detected " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""));
-                    try {
-                        getProxy().getEventManager().register(this, new AuthMeVelocityListener(this));
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "Could not create " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""), e);
-                    }
-                });
-
-        getProxy().getPluginManager().getPlugin("nlogin")
-                .ifPresent(c -> {
-                    log(Level.INFO, "Detected " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""));
-                    try {
-                        getProxy().getEventManager().register(this, new NLoginListener(this));
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "Could not create " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""), e);
-                    }
-                });
-
-        getProxy().getPluginManager().getPlugin("jpremium")
-                .ifPresent(c -> {
-                    log(Level.INFO, "Detected " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""));
-                    try {
-                        getProxy().getEventManager().register(this, new JPremiumListener(this));
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "Could not create " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""), e);
-                    }
-                });
-
-        getProxy().getPluginManager().getPlugin("librepremium")
-                .ifPresent(c -> {
-                    log(Level.INFO, "Detected " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""));
-                    try {
-                        new LibrePremiumListener(this, c);
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "Could not create " + c.getDescription().getName().orElse(c.getDescription().getId()) + " hook", e);
-                    }
-                });
-
-        getProxy().getPluginManager().getPlugin("librelogin")
-                .ifPresent(c -> {
-                    log(Level.INFO, "Detected " + c.getDescription().getName().orElse(c.getDescription().getId()) + " " + c.getDescription().getVersion().orElse(""));
-                    try {
-                        new LibreLoginListener(this, c);
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "Could not create " + c.getDescription().getName().orElse(c.getDescription().getId()) + " hook", e);
-                    }
-                });
-
         if (isEnabled() && getConfig().getBoolean("autogeneratehashes", true)) {
             getPackManager().generateHashes(null);
         }
@@ -245,13 +167,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
         getProxy().getEventManager().register(this, messageChannelHandler);
         getProxy().getChannelRegistrar().register(MinecraftChannelIdentifier.create("rp", "plugin"));
 
-        if (!getConfig().getBoolean("disable-metrics", false)) {
-            // TODO: Metrics?
-        }
-
-        if (firstStart || new Random().nextDouble() < 0.01) {
-            startupMessage();
-        }
+        new JedisManager();
     }
 
     protected void registerCommand(PluginCommandExecutor executor) {
@@ -394,8 +310,8 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
     }
 
     /**
-     * Reloads the configuration from the file and 
-     * resends the resource pack to all online players 
+     * Reloads the configuration from the file and
+     * resends the resource pack to all online players
      */
     public void reloadConfig(boolean resend) {
         loadConfig();
@@ -474,18 +390,19 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
     public boolean isUsepackTemporary() {
         return getConfig().getBoolean("usepack-is-temporary");
     }
-    
+
     @Override
     public int getPermanentPackRemoveTime() {
         return getConfig().getInt("permanent-pack-remove-time");
     }
-    
+
     public PluginConfig getConfig() {
         return config;
     }
 
     /**
      * Get whether the plugin successful enabled or not
+     *
      * @return Whether or not the plugin was enabled
      */
     public boolean isEnabled() {
@@ -494,19 +411,21 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Set if the plugin is enabled or not
+     *
      * @param enabled Set whether or not the plugin is enabled
      */
     private void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-    
+
     /**
      * Resends the pack that corresponds to the player's server
+     *
      * @param player The player to set the pack for
      */
     public void resendPack(Player player) {
         String serverName = "";
-        if(player.getCurrentServer().isPresent()) {
+        if (player.getCurrentServer().isPresent()) {
             serverName = player.getCurrentServer().get().getServerInfo().getName();
         }
         getPackManager().applyPack(getPlayer(player), serverName);
@@ -515,11 +434,12 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
     public void resendPack(UUID playerId) {
         getProxy().getPlayer(playerId).ifPresent(this::resendPack);
     }
-    
+
     /**
      * Send a resourcepack to a connected player
+     *
      * @param player The Player to send the pack to
-     * @param pack The resourcepack to send the pack to
+     * @param pack   The resourcepack to send the pack to
      */
     protected void sendPack(Player player, ResourcePack pack) {
         int clientVersion = player.getProtocolVersion().getProtocol();
@@ -555,8 +475,9 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * <p>Send a plugin message to the server the player is connected to!</p>
+     *
      * @param player The player to update the pack on the player's bukkit server
-     * @param packs The ResourcePacks to send the info of the the Bukkit server, can be empty to clear it!
+     * @param packs  The ResourcePacks to send the info of the the Bukkit server, can be empty to clear it!
      */
     private void sendPackInfo(Player player, List<ResourcePack> packs) {
         RegisteredServer server = getCurrentServer(player);
@@ -586,6 +507,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Get the server the player is currently on or connecting to
+     *
      * @param player The player
      * @return The name of the server
      */
@@ -696,6 +618,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Add a player's UUID to the list of players with a backend pack
+     *
      * @param playerId The uuid of the player
      */
     public void setBackend(UUID playerId) {
@@ -704,6 +627,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Remove a player's UUID from the list of players with a backend pack
+     *
      * @param playerId The uuid of the player
      */
     public void unsetBackend(UUID playerId) {
@@ -712,6 +636,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Check if a player has a pack set by a backend server
+     *
      * @param playerId The UUID of the player
      * @return If the player has a backend pack
      */
@@ -726,8 +651,9 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Get message components from the language config
-     * @param sender The sender to get the message from, will use the client language if available
-     * @param key The message key
+     *
+     * @param sender       The sender to get the message from, will use the client language if available
+     * @param key          The message key
      * @param replacements Optional placeholder replacement array
      * @return The components or an error message if not available, never null
      */
@@ -868,9 +794,9 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
     }
 
     @Override
-     public boolean checkPermission(ResourcepacksPlayer player, String perm) {
+    public boolean checkPermission(ResourcepacksPlayer player, String perm) {
         // Console
-        if(player == null)
+        if (player == null)
             return true;
         return checkPermission(player.getUniqueId(), perm);
 
@@ -947,7 +873,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
     }
 
     public void setAuthenticated(UUID playerId, boolean b) {
-        if(b) {
+        if (b) {
             authenticatedPlayers.add(playerId);
         } else {
             authenticatedPlayers.remove(playerId);
@@ -956,7 +882,8 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Get the handler for sub channels that listens on the "rp:plugin" channel to register new sub channels
-     * @return  The message channel handler
+     *
+     * @return The message channel handler
      */
     public SubChannelHandler<RegisteredServer> getMessageChannelHandler() {
         return messageChannelHandler;
@@ -964,6 +891,7 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
     /**
      * Get the tracker for getting the server a player is on or connecting to
+     *
      * @return The tracker
      */
     public CurrentServerTracker getCurrentServerTracker() {
