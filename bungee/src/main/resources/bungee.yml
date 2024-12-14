@@ -1,5 +1,0 @@
-name: ${project.name}
-main: de.themoep.resourcepacksplugin.bungee.BungeeResourcepacks
-version: '${minecraft.plugin.version}'
-author: Phoenix616
-softDepends: [ViaVersion, Geyser-BungeeCord, floodgate, nLogin, JPremium, LibrePremium, LibreLogin]

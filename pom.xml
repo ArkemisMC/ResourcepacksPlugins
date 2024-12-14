@@ -11,16 +11,7 @@
 
     <modules>
         <module>core</module>
-        <module>bungee</module>
         <module>velocity</module>
-        <!--<module>sponge</module>-->
-        <module>bukkit</module>
-        <module>bukkit-v1_8_R3</module>
-        <module>bukkit-v1_9_R1</module>
-        <module>bukkit-v1_9_R2</module>
-        <module>bukkit-v1_10_R1</module>
-        <module>bukkit-v1_11_R1</module>
-        <module>bukkit-v1_20_R3</module>
         <module>worldresourcepacks</module>
     </modules>
 
@@ -125,6 +116,11 @@
                 <artifactId>minedown</artifactId>
                 <version>${minedown.version}</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>5.2.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
