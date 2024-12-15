@@ -1,65 +1,36 @@
 debug: true
-# Default language
 default-language: en
-# Disable all metrics included in this plugin.
 disable-metrics: false
-# Whether or not resourcepack file hashes should be generated on startup:
-autogeneratehashes: true
-# Whether to append the pack hash to the end of the URL of the pack like url#hash.
-# This is necessary to work around a Vanilla bug which prevents changed packs from being downloaded
-# properly again: https://bugs.mojang.com/browse/MC-164316
+autogeneratehashes: false
 append-hash-to-url: true
-# Whether /usepack should apply packs temporary or permanent when run without any argument:
 usepack-is-temporary: true
-# Whether packs that a player has stored will override a matched assignments
 stored-packs-override-assignments: false
-# When manually setting a permanent pack then it will be reset if the user disconnects in under x amount of seconds.
-# 0 or anything below will disable this functionality
 permanent-pack-remove-time: 30
-# Whether to only send packs if authenticated on the Minecraft server
-# Requires WorldResourcepacks to be installed on the Minecraft server too
 use-auth-plugin: false
-# Different packs can be defined in this section
-
 jedis:
-  host: "localhost"
+  host: localhost
   password: "password"
-
-packs:
-  globalpack:
-    url: http://example.com/globalpack.zip
-    hash: abcdef012345678abcdef012345678abcdef0123
-  skyblock:
-    url: https://farmeurimmo.fr
-    hash: 012345678abcdef012345678abcdef012345678a
-  # Define as many packs as you want
-  another_example_pack:
-    url: http://example.com/another.zip
-    hash: abcdef012345678abcdef012345678abcdef0123
-# Empty pack to reset the pack to the default one
-empty:
-  url: http://cdn.moep.tv/files/Empty.zip
-  hash: 01517226212d27586ea0c5d6aff1aa5492dd2484
-global:
-  # Define a global pack:
-  pack: globalpack
-  # List of packs to not replace if the user already has them
-  # If no main pack is set the first one also gets used to reset 
-  # the pack if the user has a non-optional one
-  # Also this list will be used to select a pack if a user does not have the permission
-  # or the right version to use that pack. (From top to bottom)
-  optional-packs:
-    - lobbypack
-  # Delay in ticks before sending the pack to a player after he logs in/switches to the server
-  send-delay: 20
-# Different servers with different packs can be defined here
+#empty:
+#  url: http://cdn.moep.tv/files/Empty.zip
+#  hash: 01517226212d27586ea0c5d6aff1aa5492dd2484
+#  uuid: 90a7e280-0c24-36e2-b39b-327abf49c261
+#global:
+#  pack: globalpack
+#  send-delay: 20
 servers:
-  # Config for a server named "lobby"
   skyblock:
     pack: skyblock
-    # Use a regex to target all servers with a certain name
-    regex: 'skyblock-*'
-  # Define as many servers as you want.
-  # The name of the section is the server name unless a regex is specified.
-  another_example_server:
-    pack: another_example_pack
+    regex: "skyblock-.*-.*"
+useauth: false
+packs:
+  #globalpack:
+  #  url: http://example.com/globalpack.zip
+  #  uuid: be201d94-62f7-3ec2-8104-1e68a817b29d
+  #  hash: abcdef012345678abcdef012345678abcdef0123
+  #  restricted: false
+  #  permission: velocityresourcepacks.pack.globalpack
+  skyblock:
+    url: https://farmeurimmo.fr
+    uuid: bcba1733-f595-3ede-8983-9267ffea97f5
+    hash: 8a7ae8252dbf870ff3db7132b967cca079d054dd
+    restricted: false
