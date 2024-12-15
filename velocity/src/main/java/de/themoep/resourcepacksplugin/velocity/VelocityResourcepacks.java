@@ -51,6 +51,7 @@ import de.themoep.utils.lang.LangLogger;
 import de.themoep.utils.lang.LanguageConfig;
 import de.themoep.utils.lang.velocity.LanguageManager;
 import de.themoep.utils.lang.velocity.Languaged;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -59,6 +60,7 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -448,8 +450,32 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
                 sendPackClearRequest(player);
                 return;
             }
+            Component ascii = Component.text("\n" +
+                    "\n           XXXXXXXXXXX           " +
+                    "\n       XXXX           XXXX       " +
+                    "\n     XX                   XX     " +
+                    "\n   XX                       XX   " +
+                    "\n  X                           X  " +
+                    "\n    X       XXXX       XXX        X " +
+                    "\n   X       XXXX       XXX        X " +
+                    "\nX               X               X" +
+                    "\nX               X               X" +
+                    "\nX                               X" +
+                    "\n X                    XXX      X " +
+                    "\n X                   XX        X " +
+                    "\n  X               XXXX        X  " +
+                    "\n      XX      XXXXXXXX         XX   " +
+                    "\n     XX                   XX     " +
+                    "\n       XXXX           XXXX       " +
+                    "\n           XXXXXXXXXXX           ").font(Key.key("minecraft", "illageralt"));
+
             ResourcePackInfo.Builder packInfoBuilder = proxy.createResourcePackBuilder(getPackManager().getPackUrl(pack))
-                    .setId(pack.getUuid());
+                    .setId(pack.getUuid()).setShouldForce(true)
+                    .setPrompt(Component.text("\n\n§c§lLe pack de ressource §6§l" + pack.getName().toUpperCase() + "§c§l est nécessaire !" +
+                            "\n\n§6§lCliquez sur §a§lAccepter§6§l pour le télécharger.\n\n\n\n§7Hash: " + pack.getHash() +
+                            "\n§7Date de la requête: " + new SimpleDateFormat("HH:mm:ss dd/MM/yyyy ").format(new Date()) +
+                            "\n§7Cible: " + player.getUsername() + "\n").append(ascii));
+
             if (pack.getRawHash().length == 20) {
                 packInfoBuilder.setHash(pack.getRawHash());
             } else if (pack.getRawHash().length > 0) {

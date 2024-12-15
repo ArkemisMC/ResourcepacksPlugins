@@ -4,7 +4,8 @@
   "version": "${minecraft.plugin.version}",
   "main": "de.themoep.resourcepacksplugin.velocity.VelocityResourcepacks",
   "authors": [
-    "Phoenix616"
+    "Phoenix616",
+    "Farmeurimmo"
   ],
   "dependencies": [
     {
@@ -17,22 +18,6 @@
     },
     {
       "id": "floodgate",
-      "optional": true
-    },
-    {
-      "id": "authmevelocity",
-      "optional": true
-    },
-    {
-      "id": "nlogin",
-      "optional": true
-    },
-    {
-      "id": "librepremium",
-      "optional": true
-    },
-    {
-      "id": "librelogin",
       "optional": true
     }
   ]

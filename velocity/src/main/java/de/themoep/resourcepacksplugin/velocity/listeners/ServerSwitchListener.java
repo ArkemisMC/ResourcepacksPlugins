@@ -32,6 +32,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.player.ResourcePackInfo;
 import de.themoep.resourcepacksplugin.core.ResourcePack;
 import de.themoep.resourcepacksplugin.velocity.VelocityResourcepacks;
+import net.kyori.adventure.text.Component;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.*;
@@ -167,6 +168,12 @@ public class ServerSwitchListener {
             if (future != null) {
                 future.complete(event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFUL);
             }
+        }
+        if (event.getStatus() != PlayerResourcePackStatusEvent.Status.ACCEPTED
+                && event.getStatus() != PlayerResourcePackStatusEvent.Status.SUCCESSFUL
+                && event.getStatus() != PlayerResourcePackStatusEvent.Status.DOWNLOADED) {
+            plugin.logDebug("Player refused pack " + event.getPackId() + " with status " + event.getStatus() + "!");
+            event.getPlayer().disconnect(Component.text("§cVous avez refusé le pack de ressources !"));
         }
     }
 
