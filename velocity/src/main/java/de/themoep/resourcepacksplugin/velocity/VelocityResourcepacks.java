@@ -32,7 +32,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.player.ResourcePackInfo;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.util.ProxyVersion;
 import de.themoep.minedown.adventure.MineDown;
 import de.themoep.resourcepacksplugin.core.*;
 import de.themoep.resourcepacksplugin.core.commands.PluginCommandExecutor;
@@ -122,6 +121,8 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
 
         setEnabled(true);
 
+        new JedisManager();
+
         registerCommand(pluginCommand = new ResourcepacksPluginCommandExecutor(this));
         registerCommand(new UsePackCommandExecutor(this));
         registerCommand(new ResetPackCommandExecutor(this));
@@ -166,8 +167,6 @@ public class VelocityResourcepacks implements ResourcepacksPlugin, Languaged {
         getProxy().getEventManager().register(this, new ServerSwitchListener(this));
         getProxy().getEventManager().register(this, messageChannelHandler);
         getProxy().getChannelRegistrar().register(MinecraftChannelIdentifier.create("rp", "plugin"));
-
-        new JedisManager();
     }
 
     protected void registerCommand(PluginCommandExecutor executor) {

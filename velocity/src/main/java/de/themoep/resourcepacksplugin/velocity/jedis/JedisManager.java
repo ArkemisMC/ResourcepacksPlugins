@@ -19,13 +19,13 @@ public class JedisManager {
         String host = VelocityResourcepacks.INSTANCE.getConfig().getString("jedis.host", "localhost");
         REDIS_PASSWORD = VelocityResourcepacks.INSTANCE.getConfig().getString("jedis.password", null);
 
+        pool = new JedisPool(host, 6379);
+
         ResourcePack pack = VelocityResourcepacks.INSTANCE.getPackManager().getByName("skyblock");
         if (pack != null) {
             VelocityResourcepacks.INSTANCE.getPackManager().setPackUrl(pack, getURL());
             VelocityResourcepacks.INSTANCE.getPackManager().setPackHash(pack, getHash());
         }
-
-        pool = new JedisPool(host, 6379);
 
         JedisPubSub jedisPubSub = new JedisPubSub() {
             @Override
