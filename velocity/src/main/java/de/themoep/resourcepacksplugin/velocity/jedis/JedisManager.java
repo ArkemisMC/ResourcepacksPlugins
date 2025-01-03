@@ -1,5 +1,6 @@
 package de.themoep.resourcepacksplugin.velocity.jedis;
 
+import com.velocitypowered.api.proxy.Player;
 import de.themoep.resourcepacksplugin.core.ResourcePack;
 import de.themoep.resourcepacksplugin.velocity.VelocityResourcepacks;
 import redis.clients.jedis.Jedis;
@@ -36,6 +37,13 @@ public class JedisManager {
                     if (args[0].equalsIgnoreCase("reload")) {
                         System.out.println("Reloading pack...");
                         updateHashAndUrl();
+
+                        for (Player p : VelocityResourcepacks.INSTANCE.getProxy().getAllPlayers()) {
+                            VelocityResourcepacks.INSTANCE.clearPack(p);
+
+                            VelocityResourcepacks.INSTANCE.resendPack(p);
+                        }
+
                         System.out.println("Pack reloaded from redis!");
                     }
                 }
